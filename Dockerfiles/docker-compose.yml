@@ -14,23 +14,31 @@ services:
     container_name: dbcache
     ports:
       - "11211:11211"
-
-  rbmq:
-    image: rabbitmq
-    container_name: rbmq
-    ports:
-      - "15672:15672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
-  
   vproapp:
     build:
       context: ./Dockerfiles/app
     container_name: vproapp
     ports: 
       - "8080:8080"
+  
+    environment:
+      SPRING_RABBITMQ_HOST: rbmq   # Use the service name as hostname
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+    depends_on:
+      - rbmq
 
+  rbmq:
+    image: rabbitmq
+    container_name: rbmq
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+      
   vproweb:
     build:
       context: ./Dockerfiles/web
