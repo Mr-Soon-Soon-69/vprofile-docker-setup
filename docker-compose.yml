@@ -3,54 +3,56 @@ services:
     build:
       context: ./Dockerfiles/db
     container_name: vprodb
-    ports: 
+    ports:
       - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=vprodpass
+      MYSQL_ROOT_PASSWORD: vprodpass
     volumes:
       - vprodbdata:/var/lib/mysql
+
   dbcache:
     image: memcached
     container_name: dbcache
     ports:
       - "11211:11211"
+
+  rbmq:
+    image: rabbitmq:3-management
+    container_name: rbmq
+    ports:
+      - "15672:15672"
+      - "5672:5672" 
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      default:
+        aliases:
+          - vpromq01
+
   vproapp:
     build:
       context: ./Dockerfiles/app
     container_name: vproapp
-    ports: 
+    ports:
       - "8080:8080"
-  
     environment:
-      SPRING_RABBITMQ_HOST: rbmq   # Use the service name as hostname
+      SPRING_RABBITMQ_HOST: rbmq
       SPRING_RABBITMQ_PORT: 5672
       SPRING_RABBITMQ_USERNAME: guest
       SPRING_RABBITMQ_PASSWORD: guest
     depends_on:
       - rbmq
+      - database
 
-  rbmq:
-    image: rabbitmq
-    container_name: rbmq
-    ports:
-      - "15672:15672"
-      - "5672:5672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
-      
   vproweb:
     build:
       context: ./Dockerfiles/web
     container_name: vproweb
-    ports: 
+    ports:
       - "80:80"
     environment:
-      - MYSQL_ROOT_PASSWORD=vprodpass
-    volumes:
-      - vprodbdata:/var/lib/mysql
-
-
+      MYSQL_ROOT_PASSWORD: vprodpass
 
 volumes:
   vprodbdata:
